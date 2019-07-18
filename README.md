@@ -1,10 +1,4 @@
-# capstone
-# Joseph Spillers
-
-# IUPUI
-
-
-Abstract
+#Abstract
 Workspaces generally are designed to maximize productivity. ​Having a monitoring
 system could allow administrators of an environment a more thorough understanding of the peak
 times for productivity for their workers. A web+IoT based platform was developed to monitor this
