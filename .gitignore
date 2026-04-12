@@ -1,0 +1,12 @@
+# Dependencies
+node_modules/
+
+# Environment secrets — copy backend/.env.example to backend/.env
+backend/.env
+
+# Build output
+frontend/build/
+
+# OS noise
+.DS_Store
+Thumbs.db

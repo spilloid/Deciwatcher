@@ -1,213 +1,248 @@
-#Abstract
-Workspaces generally are designed to maximize productivity. ​Having a monitoring
-system could allow administrators of an environment a more thorough understanding of the peak
-times for productivity for their workers. A web+IoT based platform was developed to monitor this
-occurrence.
-_Keywords :_ ​NodeJS, Express, React, SQL, Decibles, Startup, Arduino, ESP
+<div align="center">
 
+# 🔊 DeciWatcher
 
-# Table of Contents
+**Distributed ambient noise monitoring for shared workspaces**
 
-**1. Introduction 3 **
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![React](https://img.shields.io/badge/React-16.8-61DAFB?logo=react&logoColor=black)](https://reactjs.org)
+[![Arduino](https://img.shields.io/badge/Arduino-ESP8266-00979D?logo=arduino&logoColor=white)](https://www.arduino.cc)
+[![MySQL](https://img.shields.io/badge/MySQL-5.7%2B-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com)
 
-```
-1.1 Background 3 
-1.2 Objective 3 
-1.3 Significance 3 
-1.4 Related works or available technology 3 
-```
-**2. Method and Implementation 4 **
+*Plug a sensor into any outlet, open the dashboard, and instantly see which corner of the library is actually quiet.*
 
-```
-2.1 Methods (if you tried multiple methods, method1, method2, ....) 4 
-2.2 Computing environments 4 
-2.3 Diagram of processing 5 
-2.4 Software implementation or program 5 
-```
-**3. Implementation and experiments 5 **
+</div>
 
-```
-3.1 Data acquisition or system construction 5 
-3.2 Data analysis, system implementation 5 
-```
-3. 3 Results display in figure, image, demonstration, etc. 5 
-3.4 Evaluation of system design, accuracy of analysis, processing time 5 
-3.5 Problem found and discussion of future solution 6 
-**4. Conclusion 6 **
+---
 
-**References 7 **
+## What it does
 
-**Appendix 8 **
+DeciWatcher is a plug-and-play IoT system that maps real-time noise levels across a physical space. Small ESP8266 sensor nodes — about the size of a USB stick — sit around a room and continuously sample ambient decibels. Every minute each node ships its averaged reading to a central Express API, which stores it in MySQL. A React dashboard then renders each sensor as a live bar chart so anyone can see noise history at a glance.
+
+The original motivating use case was a university library: students picking a study spot shouldn't have to walk the floor to find a quiet one.
+
+---
+
+## Architecture
 
 ```
-Figures 8 
+┌─────────────────────────────────────────────────────────┐
+│  Physical Space (e.g. library floor)                    │
+│                                                         │
+│  [Sensor A]──┐                                          │
+│  [Sensor B]──┼──── WiFi ────► Express API ──► MySQL     │
+│  [Sensor C]──┘         POST /iot/receive                │
+└─────────────────────────────────────────────────────────┘
+                                    │
+                              GET /client/data
+                                    │
+                             ┌──────▼──────┐
+                             │  React UI   │
+                             │  Bar Charts │
+                             │  per sensor │
+                             └─────────────┘
 ```
 
-## 1. Introduction
+**Data flow per sensor, every ~60 seconds:**
+1. Microphone samples analog voltage on `A0` at 1-second intervals (60 samples)
+2. Each sample is converted to dB via a calibrated linear formula
+3. The 60-sample average is POSTed to the backend with the device's MAC address
+4. Backend looks up the sensor by MAC, writes the reading to `DBReadings`
+5. Dashboard fetches all sensor histories via a single JOIN query and renders charts
 
-### 1.1 Background
+---
 
-**Rationale.** ​Workspaces generally are designed to maximize productivity. Sound level,
-in this case study from the context of intensity or Decibels, is the piece of interest for this
-study. According to an overarching study monitoring optimal sound environments, a
-conclusion was made that , “In an office setting, he recommends a large, open space be below
-70 dB, and background noise from mechanicals and speaking to be around 45 to 55 dB to
-keep people happy and healthy” (Cravens 16).
-**Student Perspective.** ​Of this ambient noise level, a coffee shop researcher noticed
-students specifically “uniformly favour the sonic environment of the café and feel detached
-and leery of rainforest ambiences”(​DROUMEVA ​124). Watching for the maximum
-acceptable noise level in a workplace environment, a study was done monitoring the health of
-nurses caring for young children. The study concluded “occupied facilities ranged from
-60dBA to 89dBA ... While the majority of participants did not report ringing in their ears, all
-employees (n=2) working in the facility with minimal acoustic considerations reported
-ringing in their ears.” (Pope 11).
-**Starting Point.** ​Crying children tend to not exist in a workplace environment, but it is
-useful to keep this figure in mind, as this could be used to represent the dipping point in being
-the least effective at maintaining productivity.
+## Hardware
 
-### 1.2 Objective
+| Component | Notes |
+|-----------|-------|
+| **ESP8266** (NodeMCU / Wemos D1 Mini) | Main MCU — handles WiFi and HTTP |
+| **KY-038 condenser microphone** | Analog output → `A0` pin |
+| 5V micro-USB power supply | Any phone charger works |
 
-The goal is to create a device which will monitor the ambient volume of a given
-location, and work with a collection of other devices to build a sort of map which an end user
-could view the current volume of a location, as well as the relative volume over time to view
-the historical impact of the ‘most productive’ locations in an environment, and the least.
+The microphone's raw ADC output is linearized to decibels using a regression formula derived from comparing the KY-038 against a reference sound level meter:
 
-### 1.3 Significance
+```
+dB = (analogRead(A0) + 83.2073) / 11.003
+```
 
-As referenced in the background, noise level monitoring is a significant measure of the
-productivity of a workplace. Having a monitoring system could allow administrators of an
+> The regression constants were adapted from Raj, A. (2018). *"Measure Sound/Noise Level in dB with Microphone and Arduino."* [Circuit Digest](https://circuitdigest.com/microcontroller-projects/arduino-sound-level-measurement).
 
+---
 
-environment a more thorough understanding of the peak times for productivity for their workers.
-Additionally, this could allow those who work in various volume environments most effectively an
-opportunity to self sort to where they would most prefer to work.
+## Project structure
 
-### 1.4 Related works or available technology
+```
+Deciwatcher/
+├── backend/
+│   ├── src/
+│   │   ├── app.js                  # Express entry point
+│   │   ├── tools/connection.js     # MySQL connection pool (reads from .env)
+│   │   └── routers/
+│   │       ├── iotRouter.js        # POST /iot/receive — ingest sensor packets
+│   │       ├── frontRouter.js      # GET  /client/data — serve dashboard data
+│   │       └── adminRouter.js      # PUT/POST /admin/*  — manage sensors
+│   ├── .env.example                # ← copy to .env and fill in credentials
+│   ├── dbBackup.sql                # Database schema + sample data
+│   └── package.json
+├── frontend/
+│   ├── src/
+│   │   ├── App.js                  # Main React component — fetches & renders charts
+│   │   └── index.js
+│   └── package.json
+└── iot/
+    └── main/main.ino               # ESP8266 firmware
+```
 
-There exist a number of machines on the market today which monitor specific sounds and other
-recording devices, like the oft referenced “James Bond Bug”, however this specific monitoring system
-has not been attempted in this particular library style context before.
+---
 
-## 2. Method and Implementation
+## Quick start
 
-### 2.1 Methods (if you tried multiple methods, method1, method2, ....)
+### Prerequisites
 
-**Interconnection.** ​Essentially the Deciwatcher Device (an Internet of Things [IoT]
-device, in this implementation an ESP8266) sends Wifi packets over a network to the Express
-Backend, which interfaces with a SQL database to store each packet. The Express backend
-also handles requests from a Web Front End written in React, and a Mobile Front End,
-written in React Native which has support for IOS and Android. The Mobile Front End
-connects directly to the IoT Platform and connects it to the Wifi network of interest.
-**SQL Structure.** ​Figures 2 and 3 represent the decided SQL structure for interaction
-as well as a bit of sample data to demonstrate how it is intended to function. The ​ _IoTSensors_
-Table stores the relative MAC of each physical device, as well as related information such as
-the Sensor Name, Location, and a picture of it. The ​ _DBReadings_ ​table stores individual
-readings sent out by the IoT Sensor in decibels with timestamps.
-**Express Backend.** ​The Express Backend handles three major functions. Firstly, it
-receives POST packets from the Arduino device, and interprets them to store them into the
-_DBReadings_ ​ table. Secondly, it receives registration requests from the React Native
-application to register new IoT devices to the platform. Thirdly, it receives data requests from
-the React and React Native applications to receive a historical record of data received by all
-Arduino devices.
-**React.** ​The React application needs to provide an intuitive web interface for a quick
-and easy viewing of all the Arduino sensors’ histories. This needed to be fast, and clean.
-Figure 5 shows the current working implementation running a card interface, which means
+- Node.js 18+
+- MySQL 5.7+ (or MariaDB 10.3+)
+- Arduino IDE with **ESP8266** board package installed
 
+### 1 — Database
 
-regardless of screen size it clips to the appropriate sizing. According to an article written by
-A. Raj (2018), utilization of the regression method to parallel the measured output vs
-expected output can achieve numbers very close to accuracy with incredibly cheap Arduino
-condenser microphones, so this approach was taken and is demonstrated in the code sample
-for the Arduino.
-**Arduino (ESP8266).** ​This device needed to listen on a variable interval for the
-decibel level of the location it is situated. From that, every minute it calculates the average of
-the decibels recorded, and sends this to the Express backend. A diagram of this is located
-under Figure 4. The wifi network and interval need to be set manually on the Arduino
-programmer.
+```sql
+-- Create the database and import the schema
+mysql -u root -p -e "CREATE DATABASE capstone;"
+mysql -u root -p capstone < backend/dbBackup.sql
+```
 
-### 2.2 Computing environments
+### 2 — Backend
 
-The Front End is a React node platform which must run on a server capable of this functionality. The
-backend is an Express node platform which must also run on a capable server. The IoT platform runs
-on the ESP8266 platform and runs standalone on power, utilizing the Arduino runtime and a wireless
-connection. Each device for simplicity sake runs on the same network and the same server (sans the
-IoT) however this is not necessary as each server could easily be run on something like Amazon’s
-AWZ or Google’s Firebase with just redirecting the fetch calls to the respective platform.
+```bash
+cd backend
+cp .env.example .env        # then edit .env with your DB credentials
+npm install
+node src/app.js             # or: npx nodemon src/app.js
+# → Listening on port 3001
+```
 
-### 2.3 Diagram of processing
+**`.env` values:**
 
-### 2.4 Software implementation or program
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PORT` | Backend HTTP port | `3001` |
+| `DB_HOST` | MySQL hostname | `localhost` |
+| `DB_USER` | MySQL username | — |
+| `DB_PASSWORD` | MySQL password | — |
+| `DB_NAME` | Database name | `capstone` |
 
-The software application implementation can be found here : ​https://github.iu.edu/jdspille/capstone​ ,
+### 3 — Frontend
 
+```bash
+cd frontend
+npm install
+# Edit package.json → "proxy" to point at your backend host/port
+npm start
+# → http://localhost:3000
+```
 
-With the main code for each section found under the respective folders.
+### 4 — Firmware
 
-Note the React Native Front end was abandoned as the interconnection of so many platforms left time
-a bit too short to tackle this portion of the project.
+1. Open `iot/main/main.ino` in Arduino IDE
+2. Edit the three `#define` lines at the top:
 
-## 3. Implementation and experiments
+```cpp
+#define SSID        "YourNetworkSSID"
+#define WIFIPWD     "YourNetworkPassword"
+#define BACKEND_URL "http://<your-server-ip>:3001/iot/receive"
+```
 
-### 3.1 Data acquisition or system construction
+3. Select **Tools → Board → NodeMCU 1.0 (ESP-12E Module)** (or your variant)
+4. Flash the sketch — the serial monitor will confirm WiFi connection and each HTTP POST
 
-Data is gathered by the IoT sensor , processed by the referenced regression algorithm, and stored in
-the SQL database as mentioned in the implementation.
+### 5 — Register a sensor
 
-### 3.2 Data analysis, system implementation
+Before a device will store readings it needs a row in `IoTSensors` with its MAC address. Use the admin API:
 
-The ambient volume of my room seems to stick around 50 dB, which is around what is to be
-expected. Representation of data becomes more difficult as the number of individual measurements
-increases. This was somewhat combated by reducing the number of measurements gathered per
-minute, however in the long term this will prove to need work to maintain efficiency.
+```bash
+curl -X POST http://localhost:3001/admin/iot \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Reading Room","location":"North wall","picture":null}'
+```
 
-### 3. 3 Results display in figure, image, demonstration, etc.
+Then update the `MAC` column directly in MySQL (or add a PATCH endpoint) with the MAC printed by the device on first boot.
 
-See Figures 2, 3, and 5 in Appendix.
+---
 
-### 3.4 Evaluation of system design, accuracy of analysis, processing time
+## API reference
 
-Application implementation made use of OOP principles and didn’t violate SOLID design constraints.
-All applications load under 5 seconds, and IoT device has no lag time, and minimizes individual
-runtime utilizing the system’s ‘delay’ command. Decibel recordings are quite accurate as the
-mathematical mapping has a negligible deviation.
+### `POST /iot/receive`
+Ingests a decibel packet from a sensor node.
 
-### 3.5 Problem found and discussion of future solution
+```json
+{ "mac": "AA:BB:CC:DD:EE:FF", "data": "52" }
+```
 
-Modification of the parameters of the runtime of the Arduino environment are only modifiable from
-the Arduino IDE, which is quite troublesome. It would be much better to be able to modify this from a
-mobile Android application. This would need to be programmed natively as it would need to connect
-over a soft AP to the Arduino and push Wifi connection details to the device.
+| Status | Meaning |
+|--------|---------|
+| `200` | Reading stored |
+| `400` | Missing `mac` or `data` field |
+| `404` | MAC not registered in `IoTSensors` |
+| `500` | Database error |
 
+---
 
-## 4. Conclusion
+### `GET /client/data`
+Returns all active sensors and their complete reading histories.
 
-Deciwatcher Device (an Internet of Things [IoT] device, in this implementation an
-ESP8266) sends Wifi packets over a network to the Express Backend, which interfaces with a
-SQL database to store each packet. The Express backend also handles requests from a Web
-Front End written in React, and a Mobile Front End, written in React Native which has
-support for IOS and Android. The Mobile Front End connects directly to the IoT Platform
-and connects it to the Wifi network of interest. Registering IoT devices requires manual
-input, but otherwise this is a complete solution.
+```json
+{
+  "sensors":  [{ "MAC": "...", "SensorName": "...", "Location": "...", "Picture": "..." }],
+  "readings": [{ "MAC": "...", "Decibels": 52, "Time": "2024-04-01T14:32:00Z" }]
+}
+```
 
+---
 
-## References
+### `PUT /admin/title` · `/admin/location` · `/admin/picture`
+Update a sensor's display metadata.
 
-Craven, V. D. (2018). The Role of Acoustics in Workplace Health: THE RIGHT
-EDUCATION AND MATERIALS CAN HELP IMPROVE WORKPLACE
-PRODUCTIVITY AND SATISFACTION. ​ _Buildings_ ​, (8), 16. Retrieved from
-https://search-ebscohost-com.proxy.ulib.uits.iu.edu/login.aspx?direct=true&db=edsgs
-r&AN=edsgcl.550997725&site=eds-live
-DROUMEVA, M. (2017). SOUNDWORK: The Coffee-Office: Urban Soundscapes for
-Creative Productivity. ​ _BC Studies_ ​, (195), 119–127. Retrieved from
-https://search.ebscohost.com/login.aspx?direct=true&db=aph&AN=128514112&site=
-eds-live
-Pope, Emily K.. (2018). Decibel Levels and Employee Perceptions of Noise Levels in Child
-Care Facilities. In ​ _BSU Honors Program Theses and Projects._ ​ Item 272. Retrieved
-from ​https://vc.bridgew.edu/honors_proj/
-Raj, A. (2018). Measure Sound/Noise Level in dB with Microphone and Arduino. Retrieved
-from
-https://circuitdigest.com/microcontroller-projects/arduino-sound-level-measurement
+```json
+{ "sid": 1, "data": "New Name" }
+```
 
+### `POST /admin/iot`
+Register a new sensor. Supply `name`, `location`, and optionally `picture` (blob).
 
+### `PUT /admin/iot`
+Toggle a sensor's active status.
 
-SEE APPENDIX IN PDF
+```json
+{ "sid": 1, "set": 0 }
+```
+
+---
+
+## Noise level reference
+
+| Range | Environment |
+|-------|-------------|
+| 30–45 dB | Quiet library, whispered conversation |
+| 45–55 dB | Recommended office background noise |
+| 55–70 dB | Normal conversation, busy café |
+| 70–85 dB | Loud office, approaching harmful range |
+| **120+ dB** | **Threshold of pain — immediate risk** |
+
+> *Sources: Craven (2018), Droumeva (2017), Pope (2018) — see `Final Report.pdf` for full citations.*
+
+---
+
+## Known limitations & future work
+
+- **Hardcoded WiFi credentials** — the firmware requires a reflash to change networks. The originally planned React Native companion app (for SoftAP provisioning) was cut due to time. A BLE or SoftAP config page would fix this.
+- **No data retention policy** — `DBReadings` grows unbounded. A scheduled job to archive or downsample old rows is needed at scale.
+- **No authentication** — the admin endpoints are open on the local network. Suitable for a closed LAN; not for public deployment without adding auth middleware.
+- **Single-page read only** — the frontend shows historical charts but has no ability to manage sensors from the UI (admin endpoints exist on the backend, UI was not built out).
+
+---
+
+## License
+
+[MIT](LICENSE) — 2019 Joseph Spillers

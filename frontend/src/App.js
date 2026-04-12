@@ -41,7 +41,7 @@ class App extends React.Component{
 								return(<section className="post">
 										<h2>{sensor.SensorName}</h2>
 										<p>{sensor.Location}</p>
-										<img style={{width: 200, height: 200}} src={`data:image/jpeg;base64,${ new Buffer(sensor.Picture).toString('base64')}`} />
+										<img style={{width: 200, height: 200}} src={`data:image/jpeg;base64,${ Buffer.from(sensor.Picture).toString('base64')}`} />
 										<BarChart
 											xTickNumber={5}
 											yTickNumber={5}
