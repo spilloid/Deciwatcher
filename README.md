@@ -4,6 +4,7 @@
 
 **Distributed ambient noise monitoring for shared workspaces**
 
+[![Live site](https://img.shields.io/badge/GitHub%20Pages-live-00c8ff?logo=github)](https://spilloid.github.io/Deciwatcher/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 [![React](https://img.shields.io/badge/React-16.8-61DAFB?logo=react&logoColor=black)](https://reactjs.org)
