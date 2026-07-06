@@ -599,6 +599,67 @@
     footer a { color: var(--muted); }
     footer a:hover { color: var(--text); text-decoration: none; }
 
+    /* ── Maturity labels ─────────────────────────────── */
+    .mlabel {
+      display: inline-block;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.18rem 0.55rem;
+      border-radius: 100px;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    .m-stable  { background: rgba(34,197,94,0.12);  color: var(--safe);  border: 1px solid rgba(34,197,94,0.3); }
+    .m-beta    { background: rgba(0,200,255,0.1);   color: var(--accent);border: 1px solid rgba(0,200,255,0.3); }
+    .m-api     { background: rgba(124,58,237,0.16); color: #a78bfa;      border: 1px solid rgba(124,58,237,0.4); }
+    .m-planned { background: rgba(148,163,184,0.1); color: var(--muted); border: 1px solid rgba(148,163,184,0.25); }
+
+    /* ── Screenshot frame ────────────────────────────── */
+    .shot-frame {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--surface);
+      box-shadow: 0 30px 80px -30px rgba(0,0,0,0.85);
+      max-width: 920px;
+    }
+    .shot-frame img { display: block; width: 100%; height: auto; }
+    .shot-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg2);
+    }
+    .shot-bar .wdot { width: 11px; height: 11px; border-radius: 50%; }
+    .shot-caption { font-size: 0.85rem; color: var(--muted); margin-top: 1rem; max-width: 640px; }
+    .shot-caption a { color: var(--accent); }
+
+    /* ── Status list ─────────────────────────────────── */
+    .status-list {
+      display: grid;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .status-item {
+      background: var(--surface);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .status-item .status-text { flex: 1; min-width: 220px; }
+    .status-item h4 { font-size: 0.98rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .status-item p  { font-size: 0.84rem; color: var(--muted); line-height: 1.55; }
+
     /* ── Reveal animation ────────────────────────────── */
     .reveal {
       opacity: 0;
@@ -659,10 +720,10 @@
     DeciWatcher
   </div>
   <ul>
+    <li><a href="#dashboard">Dashboard</a></li>
     <li><a href="#how">How it works</a></li>
     <li><a href="#features">Features</a></li>
-    <li><a href="#hardware">Hardware</a></li>
-    <li><a href="#science">Science</a></li>
+    <li><a href="#status">Status</a></li>
     <li><a href="https://github.com/spilloid/Deciwatcher" class="nav-cta">GitHub →</a></li>
   </ul>
 </nav>
@@ -670,7 +731,7 @@
 <!-- ── Hero ──────────────────────────────────────────── -->
 <section class="hero" id="top">
   <div class="hero-eyebrow">
-    <span class="dot"></span> IoT · Real-time · Open source
+    <span class="dot"></span> Working prototype · IoT · Open source
   </div>
 
   <h1>
@@ -710,18 +771,43 @@
     <div class="stat-label">Update interval per sensor</div>
   </div>
   <div class="stat reveal reveal-delay-1">
-    <div class="stat-num">∞</div>
-    <div class="stat-label">Sensors on the same network</div>
+    <div class="stat-num">60</div>
+    <div class="stat-label">Samples averaged per reading</div>
   </div>
   <div class="stat reveal reveal-delay-2">
     <div class="stat-num">~$4</div>
-    <div class="stat-label">Cost per sensor node</div>
+    <div class="stat-label">Parts cost per sensor node</div>
   </div>
   <div class="stat reveal reveal-delay-3">
     <div class="stat-num">±2 dB</div>
-    <div class="stat-label">Calibrated accuracy</div>
+    <div class="stat-label">Calibration target, 40–90 dB</div>
   </div>
 </div>
+
+<!-- ── Dashboard screenshot ──────────────────────────── -->
+<section id="dashboard">
+  <div class="container">
+    <span class="section-tag">The dashboard</span>
+    <h2 class="section-title">One page.<br>Every sensor.</h2>
+    <p class="section-sub">The React dashboard pulls every sensor's reading history from the backend and renders each location as a colour-coded decibel chart — green is quiet, red is painful, all against a fixed 0–120 dB scale. This is the real UI, shown with sample library data.</p>
+
+    <div class="reveal">
+      <div class="shot-frame">
+        <div class="shot-bar">
+          <span class="wdot" style="background:#ef4444"></span>
+          <span class="wdot" style="background:#f59e0b"></span>
+          <span class="wdot" style="background:#22c55e"></span>
+        </div>
+        <img src="assets/screenshots/deciwatcher-dashboard.jpg" width="1280" height="1400"
+             alt="DeciWatcher dashboard showing sensor cards with decibel history bar charts" loading="lazy">
+      </div>
+      <p class="shot-caption">
+        Live dashboard — one card per sensor, each bar coloured by noise level with a dashed line at the 85 dB harmful threshold.
+        <a href="assets/screenshots/deciwatcher-dashboard-full.jpg">See the full floor →</a>
+      </p>
+    </div>
+  </div>
+</section>
 
 <!-- ── How it works ──────────────────────────────────── -->
 <section class="how" id="how">
@@ -763,33 +849,33 @@
     <div class="features-grid reveal">
       <div class="feature-card">
         <div class="feature-icon">🔌</div>
-        <h3>Truly wireless sensors</h3>
+        <h3>Wall-powered sensors <span class="mlabel m-stable">Stable</span></h3>
         <p>Each node runs on a standard USB power adapter. No batteries to change, no cables to route. Stick it on a bookshelf and leave.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🗺️</div>
-        <h3>Multi-location heatmap</h3>
-        <p>Name each sensor after its physical location — "Reading Room," "Café Corner," "Study Hall 2B" — and the dashboard maps noise level to place.</p>
+        <h3>Per-location cards <span class="mlabel m-stable">Stable</span></h3>
+        <p>Name each sensor after its physical location — "Reading Room," "Café Corner," "Study Hall 2B" — and the dashboard renders one labelled chart per place.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">📈</div>
-        <h3>Historical bar charts</h3>
-        <p>Every reading is timestamped and stored indefinitely. View the full noise history of any location — peak hours, quiet windows, recurring patterns.</p>
+        <h3>Historical bar charts <span class="mlabel m-stable">Stable</span></h3>
+        <p>Every reading is timestamped and stored in MySQL. The dashboard draws the full noise history of each location with a dependency-free inline-SVG chart.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🧮</div>
-        <h3>Regression-calibrated dB</h3>
-        <p>A linear regression formula converts the cheap KY-038 microphone's raw ADC output into accurate decibel readings — close enough for environmental monitoring.</p>
+        <h3>Regression-calibrated dB <span class="mlabel m-stable">Stable</span></h3>
+        <p>A linear regression in firmware converts the cheap KY-038 microphone's raw ADC output into decibel readings — close enough for environmental monitoring.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">⚙️</div>
-        <h3>Sensor management API</h3>
-        <p>The admin REST endpoints let you rename sensors, update their location photos, and toggle them active or inactive — no database client needed.</p>
+        <h3>Sensor management <span class="mlabel m-api">API only</span></h3>
+        <p>Admin REST endpoints exist to rename sensors, update location photos, and toggle them active — but there's no dashboard UI for them yet. Call them with curl.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🔐</div>
-        <h3>12-factor config</h3>
-        <p>Database credentials and server port live in a <code>.env</code> file, never in source control. A checked-in <code>.env.example</code> documents every variable.</p>
+        <h3>Access control <span class="mlabel m-planned">Planned</span></h3>
+        <p>There is no authentication today — the API is open on the local network. Fine for a closed LAN demo, not for public deployment. Auth middleware is the next step.</p>
       </div>
     </div>
   </div>
@@ -888,6 +974,60 @@
   </div>
 </section>
 
+<!-- ── Project status ─────────────────────────────────── -->
+<section class="how" id="status">
+  <div class="container">
+    <span class="section-tag">Project status</span>
+    <h2 class="section-title">Honest about<br>what's built.</h2>
+    <p class="section-sub">DeciWatcher started as a 2019 IUPUI computer-science senior capstone and works end-to-end as a prototype. Here's exactly where each piece stands today — no roadmap theatre.</p>
+
+    <div class="status-list reveal">
+      <div class="status-item">
+        <div class="status-text">
+          <h4>Sensor firmware (ESP8266)</h4>
+          <p>Samples the microphone, applies the calibration, and POSTs an averaged reading every ~60 seconds. WiFi credentials are hardcoded and require a reflash to change.</p>
+        </div>
+        <span class="mlabel m-stable">Stable</span>
+      </div>
+      <div class="status-item">
+        <div class="status-text">
+          <h4>Ingest API · <code>POST /iot/receive</code></h4>
+          <p>Validates the packet, resolves the sensor by MAC, and writes the reading to MySQL. Returns clear 400/404/500 status codes.</p>
+        </div>
+        <span class="mlabel m-stable">Stable</span>
+      </div>
+      <div class="status-item">
+        <div class="status-text">
+          <h4>Dashboard · React 18 + Vite</h4>
+          <p>Fetches all sensor histories from <code>GET /client/data</code> and renders per-location charts. Recently migrated off Create React App to Vite; the production bundle now ships zero known-vulnerable dependencies.</p>
+        </div>
+        <span class="mlabel m-stable">Stable</span>
+      </div>
+      <div class="status-item">
+        <div class="status-text">
+          <h4>Admin API · rename / relocate / toggle</h4>
+          <p>The endpoints work and are documented, but nothing in the dashboard calls them yet — you drive them with curl or a REST client.</p>
+        </div>
+        <span class="mlabel m-api">API only</span>
+      </div>
+      <div class="status-item">
+        <div class="status-text">
+          <h4>Authentication &amp; data retention</h4>
+          <p>No auth — the API is open on the LAN. Readings grow unbounded with no archival job. Both are known gaps, suitable only for a trusted local network today.</p>
+        </div>
+        <span class="mlabel m-planned">Planned</span>
+      </div>
+      <div class="status-item">
+        <div class="status-text">
+          <h4>WiFi provisioning companion app</h4>
+          <p>A React Native app for SoftAP sensor setup was in the original proposal but was cut for time. Not started.</p>
+        </div>
+        <span class="mlabel m-planned">Planned</span>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ── Tech stack ─────────────────────────────────────── -->
 <section id="stack">
   <div class="container">
@@ -896,9 +1036,10 @@
     <p class="section-sub">No exotic dependencies. If you've run a Node app before, you can deploy this in under five minutes.</p>
 
     <div class="stack-grid reveal">
-      <div class="stack-pill"><span class="dot dot-node"></span> Node.js</div>
+      <div class="stack-pill"><span class="dot dot-node"></span> Node.js 18+</div>
       <div class="stack-pill"><span class="dot dot-express"></span> Express 4</div>
-      <div class="stack-pill"><span class="dot dot-react"></span> React 16</div>
+      <div class="stack-pill"><span class="dot dot-react"></span> React 18</div>
+      <div class="stack-pill"><span class="dot dot-esp"></span> Vite 6</div>
       <div class="stack-pill"><span class="dot dot-mysql"></span> MySQL / MariaDB</div>
       <div class="stack-pill"><span class="dot dot-arduino"></span> Arduino</div>
       <div class="stack-pill"><span class="dot dot-esp"></span> ESP8266</div>
@@ -923,7 +1064,7 @@
 <!-- ── Footer ─────────────────────────────────────────── -->
 <footer>
   <span>© 2019 Joseph Spillers — <a href="https://github.com/spilloid/Deciwatcher/blob/master/LICENSE">MIT License</a></span>
-  <span>IUPUI Senior Capstone Project · Computer Science</span>
+  <span>2019 IUPUI senior capstone · frontend modernized 2026</span>
   <a href="#top">↑ Back to top</a>
 </footer>
 

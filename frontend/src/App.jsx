@@ -1,6 +1,25 @@
 import React from 'react';
 import './assets/css/main.css';
-import {BarChart} from 'react-easy-chart';
+import NoiseChart from './NoiseChart';
+
+// Build a browser-safe <img> src from whatever the API returns for Picture.
+// The column is a MySQL blob, so JSON gives us either a base64 string, a
+// data URL, or a { type: 'Buffer', data: [...] } shape. Node's Buffer is not
+// available in the browser (webpack 5 no longer polyfills it), so decode by hand.
+function pictureSrc(picture){
+	if(!picture) return null;
+	if(typeof picture === 'string'){
+		return picture.startsWith('data:') ? picture : `data:image/jpeg;base64,${picture}`;
+	}
+	if(Array.isArray(picture.data)){
+		let binary = '';
+		const bytes = new Uint8Array(picture.data);
+		for(let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+		return `data:image/jpeg;base64,${btoa(binary)}`;
+	}
+	return null;
+}
+
 class App extends React.Component{
 
 	constructor(props){
@@ -38,26 +57,22 @@ class App extends React.Component{
 				<div id="wrapper" className="fade-in">
 					<div id="main">
 							{this.state.sensors.map((sensor)=>{
-								return(<section className="post">
+								const imgSrc = pictureSrc(sensor.Picture);
+								return(<section className="post" key={sensor.MAC}>
 										<h2>{sensor.SensorName}</h2>
 										<p>{sensor.Location}</p>
-										<img style={{width: 200, height: 200}} src={`data:image/jpeg;base64,${ Buffer.from(sensor.Picture).toString('base64')}`} />
-										<BarChart
-											xTickNumber={5}
-											yTickNumber={5}
-											axisLabels={{ x: 'Time', y: 'Decibels' }}
-											grid
-											colorBars
+										{imgSrc &&
+											<img style={{width: 200, height: 200}} src={imgSrc} alt={sensor.SensorName} />}
+										<NoiseChart
 											data={
 												this.state.readings.filter(reading=>reading.MAC===sensor.MAC).map((reading)=> {
 													let time = new Date(reading.Time);
 														return ({
-															x: time.getHours() + ":" + time.getMinutes().toString().padStart(2,'0') +" "+ time.toDateString(),
+															x: time.getHours() + ":" + time.getMinutes().toString().padStart(2,'0'),
 															y: reading.Decibels
 														});
 													})
-										}
-										          axes
+											}
 										/>
 										<p>Dangerous sound @ 120+ dB</p>
 									</section>

@@ -7,11 +7,16 @@
 [![Live site](https://img.shields.io/badge/GitHub%20Pages-live-00c8ff?logo=github)](https://spilloid.github.io/Deciwatcher/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org)
-[![React](https://img.shields.io/badge/React-16.8-61DAFB?logo=react&logoColor=black)](https://reactjs.org)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://reactjs.org)
+[![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
 [![Arduino](https://img.shields.io/badge/Arduino-ESP8266-00979D?logo=arduino&logoColor=white)](https://www.arduino.cc)
 [![MySQL](https://img.shields.io/badge/MySQL-5.7%2B-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com)
 
 *Plug a sensor into any outlet, open the dashboard, and instantly see which corner of the library is actually quiet.*
+
+**Status:** working end-to-end prototype from a 2019 IUPUI senior capstone; frontend modernized to Vite + React 18 in 2026. LAN-only — no authentication yet. See [Project status](#project-status).
+
+![DeciWatcher dashboard](docs/assets/screenshots/deciwatcher-dashboard.jpg)
 
 </div>
 
@@ -88,10 +93,18 @@ Deciwatcher/
 │   ├── dbBackup.sql                # Database schema + sample data
 │   └── package.json
 ├── frontend/
+│   ├── index.html                  # Vite entry HTML
+│   ├── vite.config.js              # Dev server + /client, /iot, /admin proxy
 │   ├── src/
-│   │   ├── App.js                  # Main React component — fetches & renders charts
-│   │   └── index.js
+│   │   ├── main.jsx                # React 18 entry (createRoot)
+│   │   ├── App.jsx                 # Main component — fetches & renders sensor cards
+│   │   └── NoiseChart.jsx          # Dependency-free inline-SVG bar chart
 │   └── package.json
+├── docs/                           # GitHub Pages site
+│   ├── index.html                  # Public landing page
+│   ├── assets/screenshots/         # Captured product media
+│   └── scripts/
+│       └── capture-product-media.mjs   # Playwright screenshot script
 └── iot/
     └── main/main.ino               # ESP8266 firmware
 ```
@@ -120,7 +133,7 @@ mysql -u root -p capstone < backend/dbBackup.sql
 cd backend
 cp .env.example .env        # then edit .env with your DB credentials
 npm install
-node src/app.js             # or: npx nodemon src/app.js
+npm start                   # or: npm run dev  (nodemon auto-reload)
 # → Listening on port 3001
 ```
 
@@ -139,10 +152,19 @@ node src/app.js             # or: npx nodemon src/app.js
 ```bash
 cd frontend
 npm install
-# Edit package.json → "proxy" to point at your backend host/port
-npm start
+npm run dev                 # Vite dev server with hot reload
 # → http://localhost:3000
 ```
+
+The dev server proxies `/client`, `/iot`, and `/admin` to `http://localhost:3001`. If your
+backend runs elsewhere, set the target once via env var:
+
+```bash
+VITE_BACKEND_URL=http://192.168.0.177:3001 npm run dev
+```
+
+Build the static production bundle with `npm run build` (output in `frontend/build/`) and
+preview it with `npm run preview`.
 
 ### 4 — Firmware
 
@@ -235,12 +257,46 @@ Toggle a sensor's active status.
 
 ---
 
-## Known limitations & future work
+## Project status
 
-- **Hardcoded WiFi credentials** — the firmware requires a reflash to change networks. The originally planned React Native companion app (for SoftAP provisioning) was cut due to time. A BLE or SoftAP config page would fix this.
+Honest maturity of each piece — no roadmap theatre.
+
+| Subsystem | Status | Notes |
+|-----------|--------|-------|
+| Sensor firmware (ESP8266) | **Stable** | Samples, calibrates, and POSTs a reading every ~60s. WiFi creds hardcoded. |
+| Ingest API `POST /iot/receive` | **Stable** | Validates packet, resolves sensor by MAC, writes to MySQL. |
+| Dashboard (React 18 + Vite) | **Stable** | Fetches `GET /client/data` and renders per-location charts. Zero known-vulnerable deps in the shipped bundle. |
+| Admin API (rename/relocate/toggle) | **API only** | Endpoints work and are documented; no dashboard UI drives them yet. |
+| Authentication | **Planned** | None today — LAN-only. |
+| Data retention | **Planned** | `DBReadings` grows unbounded; no archival job. |
+| WiFi provisioning companion app | **Planned** | React Native SoftAP setup was in the original proposal, cut for time. Not started. |
+
+---
+
+## Known limitations
+
+- **Hardcoded WiFi credentials** — the firmware requires a reflash to change networks. A BLE or SoftAP config page (planned companion app) would fix this.
 - **No data retention policy** — `DBReadings` grows unbounded. A scheduled job to archive or downsample old rows is needed at scale.
 - **No authentication** — the admin endpoints are open on the local network. Suitable for a closed LAN; not for public deployment without adding auth middleware.
-- **Single-page read only** — the frontend shows historical charts but has no ability to manage sensors from the UI (admin endpoints exist on the backend, UI was not built out).
+- **Read-only dashboard** — the UI shows historical charts but cannot manage sensors; the admin endpoints exist on the backend but have no UI yet.
+
+---
+
+## Docs & screenshots
+
+The public landing page lives in [`docs/index.html`](docs/index.html) (served via GitHub Pages).
+Product screenshots under [`docs/assets/screenshots/`](docs/assets/screenshots/) are regenerated
+from the real UI with realistic mocked data:
+
+```bash
+# one-time: install Playwright + Chromium in a scratch dir
+npm install --prefix "$TEMP/deciwatcher-playwright" playwright
+npx --prefix "$TEMP/deciwatcher-playwright" playwright install chromium
+export PLAYWRIGHT_NODE_MODULES="$TEMP/deciwatcher-playwright/node_modules"
+
+# capture (builds the frontend, serves it, screenshots the dashboard)
+node docs/scripts/capture-product-media.mjs
+```
 
 ---
 

@@ -3,9 +3,8 @@ const express = require('express');
 const app = express();
 const port = process.env.PORT || 3001;
 
-let bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({extended:false}));
-app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
 
  let iotRouter = require('./routers/iotRouter');
  let frontRouter = require('./routers/frontRouter');
