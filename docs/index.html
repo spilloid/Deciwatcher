@@ -681,6 +681,7 @@
       .flow-arrow { display: none; }
     }
   </style>
+  <link rel="stylesheet" href="assets/lightbox.css">
 <!-- OpenReplay Tracking Code (replay.spillerstech.us) -->
 <script>
   var initOpts = {
@@ -798,12 +799,14 @@
           <span class="wdot" style="background:#f59e0b"></span>
           <span class="wdot" style="background:#22c55e"></span>
         </div>
-        <img src="assets/screenshots/deciwatcher-dashboard.jpg" width="1280" height="1400"
-             alt="DeciWatcher dashboard showing sensor cards with decibel history bar charts" loading="lazy">
+        <button class="lightbox-trigger" type="button" data-lightbox data-lightbox-src="assets/screenshots/deciwatcher-dashboard-full.jpg">
+          <img src="assets/screenshots/deciwatcher-dashboard.jpg" width="1280" height="1400"
+               alt="DeciWatcher dashboard showing sensor cards with decibel history bar charts" loading="lazy">
+        </button>
       </div>
       <p class="shot-caption">
         Live dashboard — one card per sensor, each bar coloured by noise level with a dashed line at the 85 dB harmful threshold.
-        <a href="assets/screenshots/deciwatcher-dashboard-full.jpg">See the full floor →</a>
+        Click the preview to explore the full floor.
       </p>
     </div>
   </div>
@@ -1076,6 +1079,7 @@
   );
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 </script>
+<script src="assets/lightbox.js"></script>
 
 </body>
 </html>
