@@ -16,6 +16,8 @@
 
 **Status:** working end-to-end prototype from a 2019 IUPUI senior capstone; frontend modernized to Vite + React 18 in 2026. LAN-only — no authentication yet. See [Project status](#project-status).
 
+**Frontend package version:** 0.1.0 (prototype; no formal product release).
+
 ![DeciWatcher dashboard](docs/assets/screenshots/deciwatcher-dashboard.jpg)
 
 </div>
